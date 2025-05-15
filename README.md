@@ -39,9 +39,6 @@ Make sure you have the copy of the source code on your local machine. Use GitHub
 Make sure the API client for Postman has **at least** the following scopes:
 
 - manage_customers
-- manage_products
-- manage_categories
-- view_tax_categories
 - manage_api_clients
 - manage_connectors
 - manage_connectors_deployments
