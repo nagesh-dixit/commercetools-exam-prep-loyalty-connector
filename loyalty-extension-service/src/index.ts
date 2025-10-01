@@ -27,7 +27,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Define routes
-app.use('/assign-customer-number', ServiceRoutes);
+app.use('/loyalty-extension-service', ServiceRoutes);
 
 // Global error handler
 app.use(errorMiddleware);

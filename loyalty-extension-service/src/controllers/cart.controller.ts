@@ -9,9 +9,9 @@ import { createApiRoot } from '../client/create.client';
  * @param {Resource} resource The resource from the request body
  * @returns {object}
  */
-const update = async (resource: Cart) => {
+const update = async (cart: Cart) => {
 
-  const earnedPoints = await calculateBonusPoints(resource);
+  const earnedPoints = await calculateBonusPoints(cart);
   const updateActions: Array<UpdateAction> = [];
 
   const updateAction: UpdateAction = {
@@ -23,7 +23,7 @@ const update = async (resource: Cart) => {
     },
     money: {
         centAmount: 0,
-        currencyCode: resource.totalPrice.currencyCode
+        currencyCode: cart.totalPrice.currencyCode
     },
     slug: "bonus-points-earned",
     taxCategory: {
@@ -95,6 +95,7 @@ const calculateBonusPoints = async (
 
     let customObject = graphQLResponse.body.data.customObjects.results[0].value;
     let cartTotal = graphQLResponse.body.data.cart.totalPrice.centAmount;
+    console.log("Cart total: " + cartTotal);
     let oldPoints = graphQLResponse.body.data.customer.custom.customFieldsRaw[0].value;
     
     let earnedPoints = 0;
@@ -104,6 +105,7 @@ const calculateBonusPoints = async (
             earnedPoints = (cartTotal/100) * factor + addon;
         }
     })
+    console.log("Earned points: " + earnedPoints);
     return earnedPoints;
 }
 
