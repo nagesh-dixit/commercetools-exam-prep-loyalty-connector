@@ -1,26 +1,15 @@
 deployAs:
-  - name: customer-number-generator-app
+  - name: loyalty-extension-service
     applicationType: service
-    endpoint: /assign-customer-number
-    scripts:
-      postDeploy: npm install && npm run build && npm run connector:post-deploy
-      preUndeploy: npm install && npm run build && npm run connector:pre-undeploy
-  - name: email-verification-sender-app
-    applicationType: event
-    endpoint: /send-email-verification
-    scripts:
-      postDeploy: npm install && npm run build && npm run connector:post-deploy
-      preUndeploy: npm install && npm run build && npm run connector:pre-undeploy
-  - name: email-verification-receiver-app
-    applicationType: service
-    endpoint: /verify-token
+    endpoint: /loyalty-extension-service
     scripts:
       postDeploy: npm install && npm run build && npm run connector:post-deploy
       preUndeploy: npm install && npm run build && npm run connector:pre-undeploy
 inheritAs:
   apiClient:
     scopes:
+      - manage_orders
       - manage_customers
       - manage_extensions
       - manage_subscriptions
-      - manage_key_value_documents
+      - view_key_value_documents
