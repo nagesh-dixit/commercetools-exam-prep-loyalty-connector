@@ -24,7 +24,7 @@ export const post = async (request: Request, response: Response) => {
     );
   }
 
-  const data = await cartController(action, resource);
+  const data = await cartController(action, resource.obj);
   if (data && (data.statusCode === 201 || data.statusCode === 200)) {
     apiSuccess(data.statusCode, data.actions, response);
     return;

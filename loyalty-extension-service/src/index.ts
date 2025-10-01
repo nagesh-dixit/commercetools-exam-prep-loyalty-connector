@@ -23,6 +23,16 @@ const app: Express = express();
 app.disable('x-powered-by');
 
 // Define configurations
+app.use((req, res, next) => {
+  logger.info('Incoming request:', {
+    method: req.method,
+    path: req.path,
+    headers: req.headers,
+    body: req.body
+  });
+  next();
+});
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
