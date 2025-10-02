@@ -11,36 +11,89 @@ import { logger } from '../utils/logger.utils';
  * @returns {object}
  */
 const update = async (cart: Cart) => {
-
-  const earnedPoints = await calculateBonusPoints(cart);
+  const apiRoot = createApiRoot();
   const updateActions: Array<UpdateAction> = [];
+    
+  // Check if cart has a customer
+  if (!cart.customerId) {
+    logger.info('No customer associated with cart. Skipping bonus points calculation.');
+    return { statusCode: 201, actions: updateActions };
+  }
 
-  const updateAction: UpdateAction = {
-    action: "addCustomLineItem",
+  const query = `
+    query ($cartId: String!, $customerId: String!, $customObjectContainer: String!) {
+      cart (id: $cartId) { 
+        customLineItems { id slug } 
+        totalPrice { currencyCode centAmount } 
+      }
+      customer (id: $customerId) { custom { customFieldsRaw { name value } } }
+      customObjects (container: $customObjectContainer) { results { key value } }
+    }
+  `;
 
-    name: {
-      "EN": "Bonus points earned " + earnedPoints, 
-      "DE": "Bonus Punkte erhalten " + earnedPoints
-    },
-    money: {
+  const variables = {
+    cartId: cart.id, 
+    customerId: cart.customerId, 
+    customObjectContainer: "schemas"
+  };    
+
+  try {
+    const graphQLResponse = await apiRoot.graphql()
+      .post({
+        body: {
+          query,
+          variables
+        }
+      })
+      .execute();
+
+    logger.info('GraphQL raw response:', JSON.stringify(graphQLResponse.body, null, 2));
+
+    let customObject = graphQLResponse.body.data.customObjects.results[0].value;
+    let cartTotal = graphQLResponse.body.data.cart.totalPrice.centAmount;
+    let oldPoints = graphQLResponse.body.data.customer.custom.customFieldsRaw[0].value;
+    const earnedPoints = await calculateBonusPoints(cartTotal, customObject);
+    
+    // Check for existing bonus points line item
+    const existingBonusLineItem = graphQLResponse.body.data.cart.customLineItems.find(
+      (item: any) => item.slug === "bonus-points-earned"
+    );
+
+    if (existingBonusLineItem) {
+      logger.info('Found existing bonus points line item, adding remove action');
+      updateActions.push({
+        action: "removeCustomLineItem",
+        customLineItemId: existingBonusLineItem.id
+      });
+    }
+
+    const updateAction: UpdateAction = {
+      action: "addCustomLineItem",
+      name: {
+        "EN": "Bonus points earned " + earnedPoints, 
+        "DE": "Bonus Punkte erhalten " + earnedPoints
+      },
+      money: {
         centAmount: 0,
         currencyCode: cart.totalPrice.currencyCode
-    },
-    slug: "bonus-points-earned",
-    taxCategory: {
+      },
+      slug: "bonus-points-earned",
+      taxCategory: {
         typeId: "tax-category",
         key: "standard-tax"
-    },
-    quantity: 1,
-  };
+      },
+      quantity: 1,
+    };
 
-  updateActions.push(updateAction);
-
-  return { statusCode: 201, actions: updateActions };
+    updateActions.push(updateAction);
+    return { statusCode: 201, actions: updateActions };
+  } catch (error) {
+    logger.error('Error during update:', error);
+    throw error;
+  }
 };
 
-// Controller for update actions
-// const update = (resource: Resource) => {};
+
 
 /**
  * Handle the order controller according to the action
@@ -73,80 +126,9 @@ export const cartController = async (
 };
 
 const calculateBonusPoints = async (
-    cart: Cart,
+    cartTotal: number,
+    customObject: any
 ): Promise<number> => {
-    const apiRoot = createApiRoot();
-    
-    // Check if cart has a customer
-    if (!cart.customerId) {
-        logger.info('No customer associated with cart. Skipping bonus points calculation.');
-        return 0;
-    }
-    
-    const query = `
-    query ($cartId: String!, $customerId: String!, $customObjectContainer: String!) {
-        cart (id: $cartId) { totalPrice { currencyCode centAmount } }
-        customer (id: $customerId) { custom { customFieldsRaw { name value } } }
-        customObjects (container: $customObjectContainer) { results { key value } }
-        }
-    `;
-
-    const variables = {cartId: cart.id, customerId: cart.customerId, customObjectContainer: "schemas"};    
-    try {
-        var graphQLResponse = await apiRoot.graphql() 
-            .post({
-                body: {
-                    query,
-                    variables
-                }
-            })
-            .execute();
-        logger.info('GraphQL raw response:', JSON.stringify(graphQLResponse.body, null, 2));
-    } catch (error) {
-        logger.error('GraphQL request failed:', error);
-        throw error;
-    }
-    if(!graphQLResponse.body || graphQLResponse.body.errors) {
-        logger.error('GraphQL errors:', JSON.stringify(graphQLResponse.body.errors, null, 2));
-        throw new CustomError(
-            'GraphQLQueryFailed',
-            500,
-            `GraphQL query failed with errors: ${JSON.stringify(graphQLResponse.body.errors)}`
-        );
-    }
-
-    if(graphQLResponse.statusCode !== 200){
-        throw new CustomError(
-            'GraphQLQueryFailed',
-            500,
-            `GraphQL query failed with status code ${graphQLResponse.statusCode}`
-          );
-    }
-    if(graphQLResponse.body.data.cart === null){
-        throw new CustomError(
-            'CartNotFound',
-            404,
-            `Cart with id ${cart.id} not found`
-          );
-    }
-    if(graphQLResponse.body.data.customer === null){
-        throw new CustomError(
-            'CustomerNotFound',
-            404,
-            `Customer with id ${cart.customerId} not found`
-          );
-    }
-    if(graphQLResponse.body.data.customObjects.results.length === 0){
-        throw new CustomError(
-            'CustomObjectNotFound',
-            404,
-            `Custom object with container schemas not found`
-          );
-    }
-    let customObject = graphQLResponse.body.data.customObjects.results[0].value;
-    let cartTotal = graphQLResponse.body.data.cart.totalPrice.centAmount;
-    let oldPoints = graphQLResponse.body.data.customer.custom.customFieldsRaw[0].value;
-    
     let earnedPoints = 0;
     Object.entries(customObject).forEach(block =>{
         let { minCartValue, maxCartValue, factor, addon } = block[1] as cartValues;
@@ -156,6 +138,7 @@ const calculateBonusPoints = async (
     })
     return earnedPoints;
 }
+
 
 export interface cartValues {
     minCartValue: number; maxCartValue: number; factor: number; addon: number;

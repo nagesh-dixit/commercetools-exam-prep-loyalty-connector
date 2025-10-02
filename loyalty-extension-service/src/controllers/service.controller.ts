@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { apiSuccess } from '../api/success.api';
 import CustomError from '../errors/custom.error';
 import { cartController } from './cart.controller';
+import { orderController } from './order.controller';
+import { logger } from '../utils/logger.utils';
 
 export const post = async (request: Request, response: Response) => {
   // Deserialize the action and resource from the body
@@ -15,18 +17,23 @@ export const post = async (request: Request, response: Response) => {
     );
   }
 
-  // The type of resource must be cart
-  if (resource.typeId !== 'cart') {
-    throw new CustomError(
-      'InvalidInput',
-      400,
-      `Resource not recognized. Resource type must be cart.`
-    );
+  let data;
+  // The type of resource must be cart or order
+  switch (resource.typeId) {
+    case 'cart':
+      data = await cartController(action, resource.obj);
+      break;
+    case 'order':
+      data = await orderController(action, resource.obj);
+      break;
+    default:
+      throw new CustomError(
+        'InvalidInput',
+        400,
+        `Resource not recognized. Resource type must be cart or order.`
+      );
   }
-
-  const data = await cartController(action, resource.obj);
   if (data && (data.statusCode === 201 || data.statusCode === 200)) {
-    apiSuccess(data.statusCode, data.actions, response);
-    return;
+    return apiSuccess(data.statusCode, data.actions, response);
   }
 };
