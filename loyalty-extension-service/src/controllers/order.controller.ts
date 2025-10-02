@@ -56,7 +56,7 @@ logger.info('Order custom fields:', order.custom?.fields);
     let oldPoints = graphQLResponse.body.data.customer.custom.customFieldsRaw[0].value;
     const totalPoints = points + oldPoints;
   
-    const updateActions: Array<CustomerUpdateAction> = [ {
+    const updateActions: Array<CustomerUpdateAction> = [{
       action: "setCustomType",
       type: {
         key: "tt-loyalty-extension",
@@ -66,23 +66,19 @@ logger.info('Order custom fields:', order.custom?.fields);
         points: totalPoints
       },
     }];
-      await apiRoot.customers()
-        .withId({ ID: order.customerId })
-        .post({
-          body: {
-            version: graphQLResponse.body.data.customer.version,
-            actions: updateActions
-          }
-        })
-        .execute()
-        .then(response => {
-          logger.info('Customer updated successfully:', response);
-          return { statusCode: 201, actions: Array<UpdateAction>() };
-        })
-        .catch(error => {
-          logger.error('Error during customer update:', error);
-          throw error;
-        });
+
+    const response = await apiRoot.customers()
+      .withId({ ID: order.customerId })
+      .post({
+        body: {
+          version: graphQLResponse.body.data.customer.version,
+          actions: updateActions
+        }
+      })
+      .execute();
+      
+    logger.info('Customer updated successfully:', response);
+    return { statusCode: 201, actions: [] };
   } catch (error) {
     logger.error('Error during update:', error);
     throw error;
