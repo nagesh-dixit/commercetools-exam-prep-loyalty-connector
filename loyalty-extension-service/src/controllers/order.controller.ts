@@ -13,17 +13,22 @@ import { logger } from '../utils/logger.utils';
 const update = async (order: Order) => {
   const apiRoot = createApiRoot();
   
-logger.info('Order received for processing:', order);
-  // Check if order has a customer
-  if (!order.customerId) {
-    logger.info('No customer associated with order. Skipping bonus points calculation.');
+  logger.info('Order received for processing:', order);
+    // Check if order has a customer
+    if (!order.customerId) {
+      logger.info('No customer associated with order. Skipping customer update.');
+      return { statusCode: 201, actions: [] };
+    }
+  logger.info('Order custom fields:', order.custom?.fields);
+    
+  if (!order.custom?.fields?.points) {
+    logger.info('No custom fields or loyalty points in this order. Skipping update.');
     return { statusCode: 201, actions: [] };
   }
-logger.info('Order custom fields:', order.custom?.fields);
-  let points = order.custom?.fields.points;
-  
-  if (!points || points <= 0) {
-    logger.info('No loyalty points in this order. Skipping update.');
+
+  let points = order.custom.fields.points;
+  if (points <= 0) {
+    logger.info('Zero or negative loyalty points in this order. Skipping update.');
     return { statusCode: 201, actions: [] };
   }
 
@@ -53,7 +58,18 @@ logger.info('Order custom fields:', order.custom?.fields);
 
     logger.info('GraphQL raw response:', JSON.stringify(graphQLResponse.body, null, 2));
 
-    let oldPoints = graphQLResponse.body.data.customer.custom.customFieldsRaw[0].value;
+    let oldPoints = 0;
+    if (graphQLResponse.body.data.customer.custom?.customFieldsRaw?.length > 0) {
+      const pointsField = graphQLResponse.body.data.customer.custom.customFieldsRaw.find(
+        (field: any) => field.name === 'points'
+      );
+      if (!pointsField) {
+        logger.info('Customer has another custom type associated. Customer may not have opted in for loyalty program.');
+        return { statusCode: 201, actions: [] };
+      }
+      oldPoints = pointsField.value || 0;
+    }
+    logger.info('Current loyalty points:', oldPoints);
     const totalPoints = points + oldPoints;
   
     const updateActions: Array<CustomerUpdateAction> = [{

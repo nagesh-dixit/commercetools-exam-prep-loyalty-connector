@@ -13,12 +13,6 @@ import { logger } from '../utils/logger.utils';
 const update = async (cart: Cart) => {
   const apiRoot = createApiRoot();
   const updateActions: Array<UpdateAction> = [];
-    
-  // Check if cart has a customer
-  if (!cart.customerId) {
-    logger.info('No customer associated with cart. Skipping bonus points calculation.');
-    return { statusCode: 201, actions: updateActions };
-  }
 
   const query = `
     query ($cartId: String!, $customerId: String!, $customObjectContainer: String!) {
@@ -26,14 +20,12 @@ const update = async (cart: Cart) => {
         customLineItems { id slug } 
         totalPrice { currencyCode centAmount } 
       }
-      customer (id: $customerId) { custom { customFieldsRaw { name value } } }
       customObjects (container: $customObjectContainer) { results { key value } }
     }
   `;
 
   const variables = {
     cartId: cart.id, 
-    customerId: cart.customerId, 
     customObjectContainer: "schemas"
   };    
 
@@ -51,7 +43,6 @@ const update = async (cart: Cart) => {
 
     let customObject = graphQLResponse.body.data.customObjects.results[0].value;
     let cartTotal = graphQLResponse.body.data.cart.totalPrice.centAmount;
-    let oldPoints = graphQLResponse.body.data.customer.custom.customFieldsRaw[0].value;
     const earnedPoints = await calculateBonusPoints(cartTotal, customObject);
     
     // Check for existing bonus points line item
