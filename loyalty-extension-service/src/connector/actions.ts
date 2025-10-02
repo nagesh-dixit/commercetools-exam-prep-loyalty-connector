@@ -46,6 +46,10 @@ export async function createCartUpdateExtension(
             resourceTypeId: 'cart',
             actions: ['Create', 'Update'],
           },
+          {
+            resourceTypeId: 'order',
+            actions: ['Create', 'Update'],
+          },
         ],
       },
     })

@@ -67,7 +67,7 @@ const update = async (cart: Cart) => {
       });
     }
 
-    const updateAction: UpdateAction = {
+    const addCustomLineItemAction: UpdateAction = {
       action: "addCustomLineItem",
       name: {
         "EN": "Bonus points earned " + earnedPoints, 
@@ -85,7 +85,22 @@ const update = async (cart: Cart) => {
       quantity: 1,
     };
 
-    updateActions.push(updateAction);
+    updateActions.push(addCustomLineItemAction);
+
+    const setCustomTypeAction = {
+          action: "setCustomType",
+          type: {
+            key: "tt-loyalty-extension",
+            typeId: 'type',
+          },
+          fields: {
+            points: earnedPoints
+          },
+        };
+        
+    updateActions.push(setCustomTypeAction);
+
+
     return { statusCode: 201, actions: updateActions };
   } catch (error) {
     logger.error('Error during update:', error);
