@@ -15,7 +15,7 @@ const update = async (cart: Cart) => {
   const updateActions: Array<UpdateAction> = [];
 
   const query = `
-    query ($cartId: String!, $customerId: String!, $customObjectContainer: String!) {
+    query ($cartId: String!, $customObjectContainer: String!) {
       cart (id: $cartId) { 
         customLineItems { id slug } 
         totalPrice { currencyCode centAmount } 

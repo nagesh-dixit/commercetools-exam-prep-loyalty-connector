@@ -42,7 +42,6 @@ const update = async (order: Order) => {
   `;
 
   const variables = {
-    orderId: order.id,
     customerId: order.customerId
   };    
 
