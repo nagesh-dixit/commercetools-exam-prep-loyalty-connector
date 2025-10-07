@@ -18,13 +18,14 @@ export const post = async (request: Request, response: Response) => {
   }
 
   let data;
+  logger.info(`Processing action: ${action} for resource type: ${resource}`);
   // The type of resource must be cart or order
   switch (resource.typeId) {
     case 'cart':
-      data = await cartController(action, resource.obj);
+      data = await cartController(action, resource);
       break;
     case 'order':
-      data = await orderController(action, resource.obj);
+      data = await orderController(action, resource);
       break;
     default:
       throw new CustomError(

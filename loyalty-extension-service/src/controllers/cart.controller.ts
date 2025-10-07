@@ -13,7 +13,7 @@ import { logger } from '../utils/logger.utils';
 const update = async (cart: Cart) => {
   const apiRoot = createApiRoot();
   const updateActions: Array<UpdateAction> = [];
-
+  logger.info('Cart received for processing:', cart.id);
   const query = `
     query ($cartId: String!, $customObjectContainer: String!) {
       cart (id: $cartId) { 
@@ -42,7 +42,7 @@ const update = async (cart: Cart) => {
     logger.info('GraphQL raw response:', JSON.stringify(graphQLResponse.body, null, 2));
 
     let customObject = graphQLResponse.body.data.customObjects.results[0].value;
-    let cartTotal = graphQLResponse.body.data.cart.totalPrice.centAmount;
+    let cartTotal = graphQLResponse.body.data.cart.totalPrice?.centAmount ?? 0;
     const earnedPoints = await calculateBonusPoints(cartTotal, customObject);
     
     // Check for existing bonus points line item
