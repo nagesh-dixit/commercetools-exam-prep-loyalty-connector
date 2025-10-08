@@ -33,8 +33,8 @@ const update = async (order: Order) => {
   }
 
   const query = `
-    query ($customerId: String!) {
-      customer (id: $customerId) { 
+    query ($customerId:String!) {
+      customer (id:$customerId) { 
         version
         custom { customFieldsRaw { name value } } 
       }
@@ -42,7 +42,7 @@ const update = async (order: Order) => {
   `;
 
   const variables = {
-    customerId: order.customerId
+    customerId:order.customerId
   };    
 
   try {
