@@ -42,7 +42,11 @@ const update = async (cart: Cart) => {
     logger.info('GraphQL raw response:', JSON.stringify(graphQLResponse.body, null, 2));
 
     let customObject = graphQLResponse.body.data.customObjects.results[0].value;
-    let cartTotal = graphQLResponse.body.data.cart.totalPrice.centAmount;
+    let cartTotal = graphQLResponse.body.data.cart?.totalPrice?.centAmount ?? 0;
+    if (cartTotal === 0) {
+      logger.info('No total price associated with cart. Skipping cart update.');
+      return { statusCode: 201, actions: [] };
+    }
     const earnedPoints = await calculateBonusPoints(cartTotal, customObject);
     
     // Check for existing bonus points line item
@@ -78,7 +82,7 @@ const update = async (cart: Cart) => {
 
     updateActions.push(addCustomLineItemAction);
 
-    const setCustomTypeAction = {
+    const setCustomTypeAction: UpdateAction = {
           action: "setCustomType",
           type: {
             key: "tt-loyalty-extension",

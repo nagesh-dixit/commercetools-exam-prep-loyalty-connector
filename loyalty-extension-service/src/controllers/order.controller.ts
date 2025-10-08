@@ -15,10 +15,10 @@ const update = async (order: Order) => {
   
   logger.info('Order received for processing:', order);
     // Check if order has a customer
-    if (!order.customerId) {
-      logger.info('No customer associated with order. Skipping customer update.');
-      return { statusCode: 201, actions: [] };
-    }
+  if (!order.customerId) {
+    logger.info('No customer associated with order. Skipping customer update.');
+    return { statusCode: 201, actions: [] };
+  }
   logger.info('Order custom fields:', order.custom?.fields);
     
   if (!order.custom?.fields?.points) {
