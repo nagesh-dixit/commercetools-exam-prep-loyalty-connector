@@ -13,7 +13,7 @@ import { logger } from '../utils/logger.utils';
 const update = async (cart: Cart) => {
   const apiRoot = createApiRoot();
   const updateActions: Array<UpdateAction> = [];
-  logger.info('Cart received for processing:', cart.id);
+  logger.info('Cart received for processing:', cart.id? cart.id : 'No ID');
   const query = `
     query ($cartId: String!, $customObjectContainer: String!) {
       cart (id: $cartId) { 

@@ -18,7 +18,10 @@ export const post = async (request: Request, response: Response) => {
   }
 
   let data;
-  logger.info(`Processing action: ${action} for resource type: ${resource}`);
+  const resourceType = resource.typeId ? resource.typeId : 'unknown';
+  const resourceId = resource.id ? resource.obj.id : 'unknown';
+  logger.info(`Processing action: ${action} for resource type: ${resourceType} with ID: ${resourceId}`);
+
   // The type of resource must be cart or order
   switch (resource.typeId) {
     case 'cart':
