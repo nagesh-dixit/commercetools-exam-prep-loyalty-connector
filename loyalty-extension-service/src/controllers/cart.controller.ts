@@ -51,7 +51,7 @@ const update = async (cart: Cart) => {
     
     // Check for existing bonus points line item
     const existingBonusLineItem = graphQLResponse.body.data.cart.customLineItems.find(
-      (item: any) => item.slug === "bonus-points-earned"
+      (item: any) => item.slug?.startsWith("bonus-points-earned")
     );
 
     if (existingBonusLineItem) {
@@ -72,7 +72,7 @@ const update = async (cart: Cart) => {
         centAmount: 0,
         currencyCode: cart.totalPrice.currencyCode
       },
-      slug: "bonus-points-earned",
+      slug: "bonus-points-earned-" + earnedPoints,
       taxCategory: {
         typeId: "tax-category",
         key: "standard-tax"
@@ -143,7 +143,7 @@ const calculateBonusPoints = async (
     Object.entries(customObject).forEach(block =>{
         let { minCartValue, maxCartValue, factor, addon } = block[1] as cartValues;
         if(cartTotal >= minCartValue && cartTotal <= maxCartValue){
-            earnedPoints = (cartTotal/100) * factor + addon;
+            earnedPoints = Math.round((cartTotal/100) * factor + addon);
         }
     })
     return earnedPoints;
